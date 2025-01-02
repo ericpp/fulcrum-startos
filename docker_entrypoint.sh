@@ -2,6 +2,18 @@
 
 set -e
 
+# Get config
+BITCOIND_TYPE=$(yq e '.bitcoind.type' /data/start9/config.yaml)
+
+# Set RPC port based on bitcoind type
+if [ "$BITCOIND_TYPE" = "internal-testnet" ]; then
+    export BITCOIND_RPC_PORT=48332
+    export BITCOIND_HOST="bitcoind-testnet.embassy"
+else
+    export BITCOIND_RPC_PORT=8332
+    export BITCOIND_HOST="bitcoind.embassy"
+fi
+
 if [ ! -e "$SSL_CERTFILE" ] || [ ! -e "$SSL_KEYFILE" ] ; then
   openssl req -newkey rsa:2048 -sha256 -nodes -x509 -days 365 -subj "/O=Fulcrum" -keyout "$SSL_KEYFILE" -out "$SSL_CERTFILE"
 fi

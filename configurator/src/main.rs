@@ -46,18 +46,27 @@ struct AdvancedConfig {
     worker_threads: Option<u16>,
     db_mem: Option<u16>,
     db_max_open_files: Option<u16>,
-    fast_sync: Option<u16>,
+    utxo_cache: Option<u16>,
 }
 
 #[derive(serde::Deserialize)]
 #[serde(tag = "type")]
-#[serde(rename_all = "kebab-case")]
 enum BitcoinCoreConfig {
-    #[serde(rename_all = "kebab-case")]
-    Internal { user: String, password: String },
-    #[serde(rename_all = "kebab-case")]
-    InternalProxy { user: String, password: String },
-    #[serde(rename_all = "kebab-case")]
+    #[serde(rename = "bitcoind")]
+    Bitcoind {
+        username: String,
+        password: String,
+    },
+    #[serde(rename = "bitcoind-proxy")]
+    BitcoindProxy {
+        username: String,
+        password: String,
+    },
+    #[serde(rename = "bitcoind-testnet")]
+    BitcoindTestnet {
+        username: String,
+        password: String,
+    },
     External {
         #[serde(deserialize_with = "deserialize_parse")]
         host: Uri,
@@ -65,7 +74,7 @@ enum BitcoinCoreConfig {
         rpc_password: String,
         rpc_port: u16,
     },
-    #[serde(rename_all = "kebab-case")]
+    #[serde(rename = "quick-connect")]
     QuickConnect {
         #[serde(deserialize_with = "deserialize_parse")]
         quick_connect_url: Uri,
@@ -103,12 +112,16 @@ fn main() -> Result<(), anyhow::Error> {
 
         let (bitcoin_rpc_user, bitcoin_rpc_pass, bitcoin_rpc_host, bitcoin_rpc_port) =
             match config.bitcoind {
-                BitcoinCoreConfig::Internal { user, password } => {
+                BitcoinCoreConfig::Bitcoind { username, password } => {
                     let hostname = format!("{}", "bitcoind.embassy");
-                    (user, password, hostname.clone(), 8332)
+                    (username, password, hostname.clone(), 8332)
                 }
-                BitcoinCoreConfig::InternalProxy { user, password } => {
-                    (user, password, format!("{}", "btc-rpc-proxy.embassy"), 8332)
+                BitcoinCoreConfig::BitcoindProxy { username, password } => {
+                    (username, password, format!("{}", "btc-rpc-proxy.embassy"), 8332)
+                }
+                BitcoinCoreConfig::BitcoindTestnet { username, password } => {
+                    let hostname = format!("{}", "bitcoind-testnet.embassy");
+                    (username, password, hostname.clone(), 48332)
                 }
                 BitcoinCoreConfig::External {
                     host,
@@ -173,11 +186,11 @@ fn main() -> Result<(), anyhow::Error> {
             );
         }
 
-        let mut fast_sync: String = "".to_string();
-        if config.advanced.fast_sync.is_some() {
-            fast_sync = format!(
-                "fast-sync = {}",
-                config.advanced.fast_sync.unwrap()
+        let mut utxo_cache: String = "".to_string();
+        if config.advanced.utxo_cache.is_some() {
+            utxo_cache = format!(
+                "utxo_cache = {}",
+                config.advanced.utxo_cache.unwrap()
             );
         }
 
@@ -193,7 +206,7 @@ fn main() -> Result<(), anyhow::Error> {
             worker_threads = worker_threads,
             db_mem = db_mem,
             db_max_open_files = db_max_open_files,
-            fast_sync = fast_sync,
+            utxo_cache = utxo_cache,
         )?;
     }
 

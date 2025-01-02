@@ -22,7 +22,7 @@ announce = false
 {worker_threads}
 {db_mem}
 {db_max_open_files}
-{fast_sync}
+{utxo_cache}
 #public_tcp_port = 50001
 #public_ssl_port = 50002
 #public_ws_port = 50003

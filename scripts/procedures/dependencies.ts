@@ -1,50 +1,51 @@
-import { types as T, matches } from "../deps.ts";
+import { types as T, matches } from '../deps.ts'
 
-const { shape, arrayOf, string, boolean } = matches;
+const { shape, arrayOf, string, boolean } = matches
 
 const matchProxyConfig = shape({
   users: arrayOf(
     shape(
       {
         name: string,
-        "allowed-calls": arrayOf(string),
+        'allowed-calls': arrayOf(string),
         password: string,
-        "fetch-blocks": boolean,
+        'fetch-blocks': boolean,
       },
-      ["fetch-blocks"]
-    )
+      ['fetch-blocks'],
+    ),
   ),
-});
+})
 
 function times<T>(fn: (i: number) => T, amount: number): T[] {
-  const answer = new Array(amount);
+  const answer = new Array(amount)
   for (let i = 0; i < amount; i++) {
-    answer[i] = fn(i);
+    answer[i] = fn(i)
   }
-  return answer;
+  return answer
 }
 
 function randomItemString(input: string) {
-  return input[Math.floor(Math.random() * input.length)];
+  return input[Math.floor(Math.random() * input.length)]
 }
 
-const serviceName = "fulcrum";
-const fullChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const serviceName = 'fulcrum'
+const fullChars =
+  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 type Check = {
-  currentError(config: T.Config): string | void;
-  fix(config: T.Config): void;
-};
+  currentError(config: T.Config): string | void
+  fix(config: T.Config): void
+}
 
 const proxyChecks: Array<Check> = [
   {
     currentError(config) {
       if (!matchProxyConfig.test(config)) {
-        return "Config is not the correct shape";
+        return 'Config is not the correct shape'
       }
       if (config.users.some((x) => x.name === serviceName)) {
-        return;
+        return
       }
-      return `Must have an RPC user named "${serviceName}"`;
+      return `Must have an RPC user named "${serviceName}"`
     },
     fix(config) {
       if (!matchProxyConfig.test(config)) {
@@ -52,44 +53,48 @@ const proxyChecks: Array<Check> = [
       }
       config.users.push({
         name: serviceName,
-        "allowed-calls": [],
-        password: times(() => randomItemString(fullChars), 22).join(""),
-      });
+        'allowed-calls': [],
+        password: times(() => randomItemString(fullChars), 22).join(''),
+      })
     },
   },
   ...[
-    "estimatesmartfee",
-    "getblockchaininfo",
-    "getblockcount",
-    "getmempoolentry",
-    "getnetworkinfo",
-    "getrawmempool",
-    "getrawtransaction",
-
+    'estimatesmartfee',
+    'getblockchaininfo',
+    'getblockcount',
+    'getmempoolentry',
+    'getnetworkinfo',
+    'getrawmempool',
+    'getrawtransaction',
   ].map(
     (operator): Check => ({
       currentError(config) {
         if (!matchProxyConfig.test(config)) {
-          return "Config is not the correct shape";
+          return 'Config is not the correct shape'
         }
-        if (config.users.find((x) => x.name === serviceName)?.["allowed-calls"]?.some((x) => x === operator) ?? false) {
-          return;
+        if (
+          config.users
+            .find((x) => x.name === serviceName)
+            ?.['allowed-calls']?.some((x) => x === operator) ??
+          false
+        ) {
+          return
         }
-        return `RPC user "${serviceName}" must have "${operator}" enabled`;
+        return `RPC user "${serviceName}" must have "${operator}" enabled`
       },
       fix(config) {
         if (!matchProxyConfig.test(config)) {
-          throw new Error("Config is not the correct shape");
+          throw new Error('Config is not the correct shape')
         }
-        const found = config.users.find((x) => x.name === serviceName);
+        const found = config.users.find((x) => x.name === serviceName)
         if (!found) {
-          throw new Error(`No user ${serviceName} found`);
+          throw new Error(`No user ${serviceName} found`)
         }
-        found["allowed-calls"] = [...(found["allowed-calls"] ?? []), operator];
+        found['allowed-calls'] = [...(found['allowed-calls'] ?? []), operator]
       },
-    })
+    }),
   ),
-];
+]
 
 const matchBitcoindConfig = shape({
   rpc: shape({
@@ -103,112 +108,136 @@ const matchBitcoindConfig = shape({
       mode: string,
     }),
   }),
-});
-
+})
 
 const bitcoindChecks: Array<Check> = [
   {
     currentError(config) {
       if (!matchBitcoindConfig.test(config)) {
-        return "Config is not the correct shape";
+        return 'Config is not the correct shape'
       }
       if (!config.rpc.enable) {
-        return "Must have RPC enabled";
+        return 'Must have RPC enabled'
       }
-      return;
+      return
     },
     fix(config) {
       if (!matchBitcoindConfig.test(config)) {
-        return;
+        return
       }
-      config.rpc.enable = true;
+      config.rpc.enable = true
     },
   },
   {
     currentError(config) {
       if (!matchBitcoindConfig.test(config)) {
-        return "Config is not the correct shape";
+        return 'Config is not the correct shape'
       }
       if (!config.advanced.peers.listen) {
-        return "Must have peer interface enabled";
+        return 'Must have peer interface enabled'
       }
-      return;
+      return
     },
     fix(config) {
       if (!matchBitcoindConfig.test(config)) {
-        return;
+        return
       }
-      config.advanced.peers.listen = true;
+      config.advanced.peers.listen = true
     },
   },
   {
     currentError(config) {
       if (!matchBitcoindConfig.test(config)) {
-        return "Config is not the correct shape";
+        return 'Config is not the correct shape'
       }
-      if (config.advanced.pruning.mode !== "disabled") {
-        return "Pruning must be disabled (must be an archival node)";
+      if (config.advanced.pruning.mode !== 'disabled') {
+        return 'Pruning must be disabled (must be an archival node)'
       }
-      return;
+      return
     },
     fix(config) {
       if (!matchBitcoindConfig.test(config)) {
-        return;
+        return
       }
-      config.advanced.pruning.mode = "disabled";
+      config.advanced.pruning.mode = 'disabled'
     },
   },
-];
+]
 
 export const dependencies: T.ExpectedExports.dependencies = {
-  "btc-rpc-proxy": {
+  'btc-rpc-proxy': {
     // deno-lint-ignore require-await
     async check(effects, configInput) {
-      effects.info("check btc-rpc-proxy");
+      effects.info('check btc-rpc-proxy')
       for (const checker of proxyChecks) {
-        const error = checker.currentError(configInput);
+        const error = checker.currentError(configInput)
         if (error) {
-          effects.error(`throwing error: ${error}`);
-          return { error };
+          effects.error(`throwing error: ${error}`)
+          return { error }
         }
       }
-      return { result: null };
+      return { result: null }
     },
     // deno-lint-ignore require-await
     async autoConfigure(effects, configInput) {
-      effects.info("autoconfigure btc-rpc-proxy");
+      effects.info('autoconfigure btc-rpc-proxy')
       for (const checker of proxyChecks) {
-        const error = checker.currentError(configInput);
+        const error = checker.currentError(configInput)
         if (error) {
-          checker.fix(configInput);
+          checker.fix(configInput)
         }
       }
-      return { result: configInput };
+      return { result: configInput }
     },
   },
   bitcoind: {
     // deno-lint-ignore require-await
     async check(effects, configInput) {
-      effects.info("check bitcoind");
+      effects.info('check bitcoind')
       for (const checker of bitcoindChecks) {
-        const error = checker.currentError(configInput);
+        const error = checker.currentError(configInput)
         if (error) {
-          effects.error(`throwing error: ${error}`);
-          return { error };
+          effects.error(`throwing error: ${error}`)
+          return { error }
         }
       }
-      return { result: null };
+      return { result: null }
     },
     // deno-lint-ignore require-await
     async autoConfigure(effects, configInput) {
-      effects.info("autoconfigure bitcoind");
+      effects.info('autoconfigure bitcoind')
       for (const checker of bitcoindChecks) {
-        const error = checker.currentError(configInput);
+        const error = checker.currentError(configInput)
         if (error) {
-          checker.fix(configInput);
+          checker.fix(configInput)
         }
       }
-      return { result: configInput };
+      return { result: configInput }
     },
   },
-};
+  'bitcoind-testnet': {
+    // deno-lint-ignore require-await
+    async check(effects, configInput) {
+      effects.info('check bitcoind-testnet')
+      for (const checker of bitcoindChecks) {
+        const error = checker.currentError(configInput)
+        if (error) {
+          effects.error(`throwing error: ${error}`)
+          return { error }
+        }
+      }
+      return { result: null }
+    },
+    // deno-lint-ignore require-await
+    async autoConfigure(effects, configInput) {
+      effects.info('autoconfigure bitcoind-testnet')
+      for (const checker of bitcoindChecks) {
+        const error = checker.currentError(configInput)
+        if (error) {
+          checker.fix(configInput)
+        }
+      }
+      return { result: configInput }
+    },
+  },
+}

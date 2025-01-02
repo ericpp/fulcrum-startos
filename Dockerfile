@@ -1,7 +1,6 @@
-FROM debian:bullseye as builder
+FROM debian:bullseye AS builder
 
-LABEL maintainer.0="Axel Gembe <derago@gmail.com>" \
-  maintainer.1="Chris Guida (@chrisguida@gmail.com)"
+LABEL maintainer.0="linkinparkrulz <linkinparkrulz@protonmail.com>" 
 
 ARG MAKEFLAGS
 
@@ -10,27 +9,28 @@ RUN apt update -y && \
 
 WORKDIR /src
 
-COPY ./Fulcrum .
+RUN git clone --branch v1.11.1 https://github.com/cculianu/Fulcrum.git . && \
+    git checkout v1.11.1
 
-RUN qmake -makefile PREFIX=/usr Fulcrum.pro && \
-    make $MAKEFLAGS install
+RUN qmake -makefile PREFIX=/usr "QMAKE_CXXFLAGS_RELEASE -= -O3" "QMAKE_CXXFLAGS_RELEASE += -O1" Fulcrum.pro && \
+    make install
 
 RUN strip Fulcrum
 
 FROM debian:bullseye-slim
 
 RUN apt update && \
-    apt install -y openssl libqt5network5 zlib1g libbz2-1.0 libjemalloc2 libzmq5 tini wget && \
+    apt install -y openssl libqt5network5 zlib1g libbz2-1.0 libjemalloc2 libzmq5 tini wget curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY --from=builder /src/Fulcrum /usr/bin/Fulcrum
 
 VOLUME ["/data"]
-ENV DATA_DIR /data
+ENV DATA_DIR=/data
 
-ENV SSL_CERTFILE ${DATA_DIR}/fulcrum.crt
-ENV SSL_KEYFILE ${DATA_DIR}/fulcrum.key
+ENV SSL_CERTFILE=${DATA_DIR}/fulcrum.crt
+ENV SSL_KEYFILE=${DATA_DIR}/fulcrum.key
 
 EXPOSE 50001 50002
 
@@ -43,3 +43,8 @@ RUN chmod a+x /usr/local/bin/docker_entrypoint.sh
 # ENTRYPOINT ["/entrypoint.sh"]
 
 # CMD ["Fulcrum"]
+
+# Add health check scripts
+COPY ./scripts/services/check-synced.sh /usr/local/bin/check-synced.sh
+COPY ./scripts/services/check-electrum.sh /usr/local/bin/check-electrum.sh
+RUN chmod +x /usr/local/bin/check-synced.sh /usr/local/bin/check-electrum.sh

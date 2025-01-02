@@ -1,5 +1,4 @@
-import { types as T, compat } from "../deps.ts";
-
+import { compat, types as T } from '../deps.ts'
 
 export const getConfig: T.ExpectedExports.getConfig = compat.getConfig({
   "electrum-tor-address": {
@@ -9,25 +8,26 @@ export const getConfig: T.ExpectedExports.getConfig = compat.getConfig({
     "subtype": "package",
     "package-id": "fulcrum",
     "target": "tor-address",
-    "interface": "electrum"
+    "interface": "electrum",
   },
   "bitcoind": {
     "type": "union",
-    "name": "Bitcoin Core",
-    "description": "The Bitcoin Core node to connect to",
+    "name": "Bitcoin Node",
+    "description": "The Bitcoin node type you would like to use for Dojo",
     "tag": {
       "id": "type",
-      "name": "Type",
+      "name": "Select Bitcoin Node",
       "variant-names": {
-        "internal": "Bitcoin Core",
-        "internal-proxy": "Bitcoin Proxy",
+        "bitcoind": "Bitcoin Core",
+        "bitcoind-proxy": "Bitcoin Core (proxy)",
+        "bitcoind-testnet": "Bitcoin Core (testnet4)",
       },
-      "description": "Options<ul><li>Bitcoin Core: the Bitcoin Core node installed on your Embassy</li><li>Bitcoin Proxy: the Bitcoin Proxy service installed on your Embassy</li></ul>",
+      "description": "The Bitcoin node type you would like to use for Fulcrum",
     },
-    "default": "internal",
+    "default": "bitcoind",
     "variants": {
-      "internal": {
-        "user": {
+      "bitcoind": {
+        "username": {
           "type": "pointer",
           "name": "RPC Username",
           "description": "The username for Bitcoin Core's RPC interface",
@@ -35,7 +35,7 @@ export const getConfig: T.ExpectedExports.getConfig = compat.getConfig({
           "package-id": "bitcoind",
           "target": "config",
           "multi": false,
-          "selector": "$.rpc.username"
+          "selector": "$.rpc.username",
         },
         "password": {
           "type": "pointer",
@@ -45,11 +45,11 @@ export const getConfig: T.ExpectedExports.getConfig = compat.getConfig({
           "package-id": "bitcoind",
           "target": "config",
           "multi": false,
-          "selector": "$.rpc.password"
-        }
+          "selector": "$.rpc.password",
+        },
       },
-      "internal-proxy": {
-        "user": {
+      "bitcoind-proxy": {
+        "username": {
           "type": "pointer",
           "name": "RPC Username",
           "description": "The username for the RPC user allocated to fulcrum",
@@ -57,7 +57,7 @@ export const getConfig: T.ExpectedExports.getConfig = compat.getConfig({
           "package-id": "btc-rpc-proxy",
           "target": "config",
           "multi": false,
-          "selector": "$.users[?(@.name == \"fulcrum\")].name"
+          "selector": "$.users[?(@.name == \"fulcrum\")].name",
         },
         "password": {
           "type": "pointer",
@@ -67,35 +67,38 @@ export const getConfig: T.ExpectedExports.getConfig = compat.getConfig({
           "package-id": "btc-rpc-proxy",
           "target": "config",
           "multi": false,
-          "selector": "$.users[?(@.name == \"fulcrum\")].password"
-        }
-      }
-    }
+          "selector": "$.users[?(@.name == \"fulcrum\")].password",
+        },
+      },
+      "bitcoind-testnet": {
+        "username": {
+          "type": "pointer",
+          "name": "RPC Username",
+          "description": "The username for Bitcoin Core Testnet RPC interface",
+          "subtype": "package",
+          "package-id": "bitcoind-testnet",
+          "target": "config",
+          "multi": false,
+          "selector": "$.rpc.username",
+        },
+        "password": {
+          "type": "pointer",
+          "name": "RPC Password",
+          "description": "The password for Bitcoin Core Testnet RPC interface",
+          "subtype": "package",
+          "package-id": "bitcoind-testnet",
+          "target": "config",
+          "multi": false,
+          "selector": "$.rpc.password",
+        },
+      },
+    },
   },
   "advanced": {
     "type": "object",
     "name": "Advanced",
     "description": "Advanced settings for Fulcrum",
     "spec": {
-      // "log-filters": {
-      //   "type": "enum",
-      //   "name": "Log Filters",
-      //   "values": [
-      //     "ERROR",
-      //     "WARN",
-      //     "INFO",
-      //     "DEBUG",
-      //     "TRACE"
-      //   ],
-      //   "value-names": {
-      //     "ERROR": "Error",
-      //     "WARN": "Warning",
-      //     "INFO": "Info",
-      //     "DEBUG": "Debug",
-      //     "TRACE": "Trace"
-      //   },
-      //   "default": "INFO"
-      // },
       "bitcoind-timeout": {
         "type": "number",
         "name": "Bitcoin RPC Timeout",
@@ -146,9 +149,9 @@ export const getConfig: T.ExpectedExports.getConfig = compat.getConfig({
         "units": "files",
         "default": 200,
       },
-      "fast-sync": {
+      "utxo_cache": {
         "type": "number",
-        "name": "Fast Sync MB",
+        "name": "UTXO Cache Size",
         "description": "https://github.com/cculianu/Fulcrum/blob/feb8f6a8dd361422f8388e77978a55e38ddb5ca0/doc/fulcrum-example-config.conf#L685-L701",
         "nullable": true,
         "range": "[1,*)",
@@ -156,6 +159,6 @@ export const getConfig: T.ExpectedExports.getConfig = compat.getConfig({
         "units": "MB",
         "default": 1024,
       },
-    }
-  }
+    },
+  },
 })
