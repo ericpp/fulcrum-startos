@@ -6,7 +6,7 @@ set -e
 BITCOIND_TYPE=$(yq e '.bitcoind.type' /data/start9/config.yaml)
 
 # Set RPC port based on bitcoind type
-if [ "$BITCOIND_TYPE" = "internal-testnet" ]; then
+if [ "$BITCOIND_TYPE" = "bitcoind-testnet" ]; then
     export BITCOIND_RPC_PORT=48332
     export BITCOIND_HOST="bitcoind-testnet.embassy"
 else
