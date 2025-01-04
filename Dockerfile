@@ -20,7 +20,7 @@ RUN strip Fulcrum
 FROM debian:bullseye-slim
 
 RUN apt update && \
-    apt install -y openssl libqt5network5 zlib1g libbz2-1.0 libjemalloc2 libzmq5 tini wget curl && \
+    apt install -y openssl libqt5network5 zlib1g libbz2-1.0 libjemalloc2 libzmq5 tini wget curl netcat && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -46,6 +46,6 @@ RUN chmod a+x /usr/local/bin/docker_entrypoint.sh
 # CMD ["Fulcrum"]
 
 # Add health check scripts
-COPY ./scripts/services/check-synced.sh /usr/local/bin/check-synced.sh
-COPY ./scripts/services/check-electrum.sh /usr/local/bin/check-electrum.sh
+COPY ./check-synced.sh /usr/local/bin/check-synced.sh
+COPY ./check-electrum.sh /usr/local/bin/check-electrum.sh
 RUN chmod +x /usr/local/bin/check-synced.sh /usr/local/bin/check-electrum.sh
