@@ -44,14 +44,34 @@ else
     echo " ($(expr ${b_block_count}00 / $b_block_hcount)%)" >&2
     exit 61
  else
-    #Check to make sure the Fulcrum RPC is actually up and responding
-    features_res=$(echo '{"jsonrpc": "2.0", "method": "server.features", "params": [], "id": 0}' | netcat -w 1 127.0.0.1 50001)
-    server_string=$(echo $featres_res | yq '.result.server_version')
-    if [ -n "$server_string" ] ; then
-        #Index is synced to tip
-        exit 0
-    else
-        echo "Fulcrum RPC is not responding." >&2
+    #Gather keys/values from stats endpoint
+    curl_res=$(curl -sS http://localhost:8080/stats)
+    error_code=$?
+
+    if [[ $error_code -ne 0 ]]; then
+        echo "Error contacting the Fulcrum stats server" >&2
+        exit 61
+    fi
+
+    synced_height=$(echo -e "$curl_res" | yq '.Controller.["Header count"]')
+    if [ -n "$synced_height" ] && [[ $synced_height -ge 0 ]] ; then
+        if [[ $synced_height -lt $b_block_count ]] ; then
+            echo "Catching up to blocks from bitcoind. This should take at most a day. Progress: $synced_height of $b_block_count blocks ($(expr ${synced_height}00 / $b_block_count)%)" >&2
+            exit 61
+        else
+            #Check to make sure the Fulcrum RPC is actually up and responding
+            features_res=$(echo '{"jsonrpc": "2.0", "method": "server.features", "params": [], "id": 0}' | netcat -w 1 127.0.0.1 50001)
+            server_string=$(echo $features_res | yq '.result.server_version')
+            if [ -n "$server_string" ] ; then
+                #Index is synced to tip
+                exit 0
+            else
+                echo "Fulcrum RPC is not responding." >&2
+                exit 61
+            fi
+        fi
+    elif [ -z "$synced_height" ] ; then
+        echo "Fulcrum is not yet returning the sync status" >&2
         exit 61
     fi
  fi
